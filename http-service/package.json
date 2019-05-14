@@ -17,6 +17,7 @@
   "dependencies": {
     "@aws-cdk/cdk": "^0.31.0",
     "@aws-cdk/aws-ecs": "^0.31.0",
+    "@aws-cdk/aws-codepipeline-actions": "^0.31.0",
     "source-map-support": "^0.5.9"
   }
 }
