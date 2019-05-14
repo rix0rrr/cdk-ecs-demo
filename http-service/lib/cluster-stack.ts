@@ -11,7 +11,9 @@ export class ClusterStack extends cdk.Stack {
 
     this.vpc = new ec2.VpcNetwork(this, 'Vpc', { maxAZs: 2 });
     this.cluster = new ecs.Cluster(this, 'Cluster', { vpc: this.vpc });
-
+    this.cluster.addCapacity('DefaultCapacity', {
+      instanceType: new ec2.InstanceType('m3.medium'),
+    });
   }
 }
 
