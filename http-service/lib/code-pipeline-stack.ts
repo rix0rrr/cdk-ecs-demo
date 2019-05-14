@@ -24,6 +24,7 @@ export class CodePipelineStack extends cdk.Stack {
       actionName: 'GitHub',
       owner: 'rix0rrr',
       repo: 'cdk-ecs-demo',
+      branch: 'adamruka',
       oauthToken: cdk.SecretValue.secretsManager('my-github-token'),
       output: sourceOutput,
       trigger: codepipeline_actions.GitHubTrigger.Poll,
