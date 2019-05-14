@@ -1,13 +1,13 @@
 import cdk = require('@aws-cdk/cdk');
 import ecr = require('@aws-cdk/aws-ecr');
+import ecs = require('@aws-cdk/aws-ecs');
 import codebuild = require('@aws-cdk/aws-codebuild');
 import codepipeline = require('@aws-cdk/aws-codepipeline');
 import codepipeline_actions = require('@aws-cdk/aws-codepipeline-actions');
 import { PipelineContainerImage } from "./pipeline-container-image";
 
 export class CodePipelineStack extends cdk.Stack {
-  public readonly repository: ecr.Repository;
-  public readonly builtImage: PipelineContainerImage;
+  public readonly builtImage: ecs.ContainerImage;
 
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, {
@@ -15,8 +15,9 @@ export class CodePipelineStack extends cdk.Stack {
       autoDeploy: false,
     });
 
-    this.repository = new ecr.Repository(this, 'EcrRepo');
-    this.builtImage = new PipelineContainerImage(this.repository);
+    const repository = new ecr.Repository(this, 'EcrRepo');
+    const builtImage = new PipelineContainerImage(repository);
+    this.builtImage = builtImage;
 
     const sourceOutput = new codepipeline.Artifact();
     const sourceAction = new codepipeline_actions.GitHubSourceAction({
@@ -83,11 +84,11 @@ export class CodePipelineStack extends cdk.Stack {
       },
       environmentVariables: {
         'REPOSITORY_URI': {
-          value: this.repository.repositoryUri,
+          value: repository.repositoryUri,
         },
       },
     });
-    this.repository.grantPullPush(dockerBuild);
+    repository.grantPullPush(dockerBuild);
 
     const dockerBuildOutput = new codepipeline.Artifact();
     const cdkBuildOutput = new codepipeline.Artifact();
@@ -124,7 +125,7 @@ export class CodePipelineStack extends cdk.Stack {
               templatePath: cdkBuildOutput.atPath('ProdHttpServiceStack.template.yaml'),
               adminPermissions: true,
               parameterOverrides: {
-                [this.builtImage.paramName]: dockerBuildOutput.getParam('imageTag.json', 'imageTag'),
+                [builtImage.paramName]: dockerBuildOutput.getParam('imageTag.json', 'imageTag'),
               },
               extraInputs: [dockerBuildOutput],
             }),
