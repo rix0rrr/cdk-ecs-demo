@@ -1,7 +1,6 @@
 import cdk = require('@aws-cdk/cdk');
 import ecr = require('@aws-cdk/aws-ecr');
 import codebuild = require('@aws-cdk/aws-codebuild');
-// import ecs = require('@aws-cdk/aws-ecs');
 import codepipeline = require('@aws-cdk/aws-codepipeline');
 import codepipeline_actions = require('@aws-cdk/aws-codepipeline-actions');
 import { PipelineContainerImage } from "./pipeline-container-image";
@@ -126,7 +125,6 @@ export class CodePipelineStack extends cdk.Stack {
               adminPermissions: true,
               parameterOverrides: {
                 [this.builtImage.paramName]: dockerBuildOutput.getParam('imageTag.json', 'imageTag'),
-                // ...this.builtImage.assing(dockerBuildOutput)
               },
               extraInputs: [dockerBuildOutput],
             }),
