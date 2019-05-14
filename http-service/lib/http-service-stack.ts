@@ -44,7 +44,8 @@ export class HttpServiceStack extends cdk.Stack {
 
     listener.addTargets('DefaultTarget', {
       port: 8000,
-      targets: [service]
+      targets: [service],
+      deregistrationDelaySec: 30,
     });
 
     // CfnOutput the DNS where you can access your service
