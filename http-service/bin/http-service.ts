@@ -13,10 +13,11 @@ new HttpServiceStack(app, 'HttpServiceStack', {
   cluster: clusterStack.cluster,
 });
 
+const codePipelineStack = new CodePipelineStack(app, 'CodePipelineStack');
+
 new HttpServiceStack(app, 'ProdHttpServiceStack', {
   vpc: clusterStack.vpc,
   cluster: clusterStack.cluster,
   autoDeploy: false,
+  image: codePipelineStack.builtImage,
 });
-
-new CodePipelineStack(app, 'CodePipelineStack');

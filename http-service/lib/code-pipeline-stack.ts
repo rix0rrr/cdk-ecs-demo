@@ -1,11 +1,14 @@
 import cdk = require('@aws-cdk/cdk');
 import ecr = require('@aws-cdk/aws-ecr');
 import codebuild = require('@aws-cdk/aws-codebuild');
+// import ecs = require('@aws-cdk/aws-ecs');
 import codepipeline = require('@aws-cdk/aws-codepipeline');
 import codepipeline_actions = require('@aws-cdk/aws-codepipeline-actions');
+import { PipelineContainerImage } from "./pipeline-container-image";
 
 export class CodePipelineStack extends cdk.Stack {
   public readonly repository: ecr.Repository;
+  public readonly builtImage: PipelineContainerImage;
 
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, {
@@ -14,6 +17,7 @@ export class CodePipelineStack extends cdk.Stack {
     });
 
     this.repository = new ecr.Repository(this, 'EcrRepo');
+    this.builtImage = new PipelineContainerImage(this.repository);
 
     const sourceOutput = new codepipeline.Artifact();
     const sourceAction = new codepipeline_actions.GitHubSourceAction({
@@ -69,7 +73,7 @@ export class CodePipelineStack extends cdk.Stack {
           post_build: {
             commands: [
               'docker push $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
-              `printf '{ "Parameters": { "imageTag": "$CODEBUILD_RESOLVED_SOURCE_VERSION" } }' > imageTag.json`,
+              `printf '{ "imageTag": "'$CODEBUILD_RESOLVED_SOURCE_VERSION'" }' > imageTag.json`,
             ],
           },
         },
@@ -85,6 +89,9 @@ export class CodePipelineStack extends cdk.Stack {
     });
     this.repository.grantPullPush(dockerBuild);
 
+    const dockerBuildOutput = new codepipeline.Artifact();
+    const cdkBuildOutput = new codepipeline.Artifact();
+
     new codepipeline.Pipeline(this, 'Pipeline', {
       stages: [
         {
@@ -98,20 +105,32 @@ export class CodePipelineStack extends cdk.Stack {
               actionName: 'DockerBuild',
               project: dockerBuild,
               input: sourceOutput,
-              output: new codepipeline.Artifact(),
+              output: dockerBuildOutput,
             }),
             new codepipeline_actions.CodeBuildAction({
               actionName: 'CdkBuild',
               project: cdkBuild,
               input: sourceOutput,
-              output: new codepipeline.Artifact(),
+              output: cdkBuildOutput,
             })
           ],
         },
-        // {
-        //   name: 'Deploy',
-        //   actions: deployActions,
-        // },
+        {
+          name: 'Deploy',
+          actions: [
+            new codepipeline_actions.CloudFormationCreateUpdateStackAction({
+              actionName: 'CFN_Deploy',
+              stackName: 'ProdHttpServiceStack',
+              templatePath: cdkBuildOutput.atPath('ProdHttpServiceStack.template.yaml'),
+              adminPermissions: true,
+              parameterOverrides: {
+                [this.builtImage.paramName]: dockerBuildOutput.getParam('imageTag.json', 'imageTag'),
+                // ...this.builtImage.assing(dockerBuildOutput)
+              },
+              extraInputs: [dockerBuildOutput],
+            }),
+          ],
+        },
       ],
     });
   }
