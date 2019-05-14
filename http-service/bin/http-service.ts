@@ -13,4 +13,10 @@ new HttpServiceStack(app, 'HttpServiceStack', {
   cluster: clusterStack.cluster,
 });
 
+new HttpServiceStack(app, 'ProdHttpServiceStack', {
+  vpc: clusterStack.vpc,
+  cluster: clusterStack.cluster,
+  autoDeploy: false,
+});
+
 new CodePipelineStack(app, 'CodePipelineStack');

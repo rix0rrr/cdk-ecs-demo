@@ -25,6 +25,33 @@ export class CodePipelineStack extends cdk.Stack {
       trigger: codepipeline_actions.GitHubTrigger.Poll,
     });
 
+    const cdkBuild = new codebuild.PipelineProject(this, 'CdkBuildProject', {
+      environment: {
+        buildImage: codebuild.LinuxBuildImage.UBUNTU_14_04_NODEJS_8_11_0,
+      },
+      buildSpec: {
+        version: '0.2',
+        phases: {
+          install: {
+            commands: [
+              'cd http-service',
+              'npm install',
+            ],
+          },
+          build: {
+            commands: [
+              'npm run build',
+              'npm run cdk synth ProdHttpServiceStack -- -o .',
+            ],
+          },
+        },
+        artifacts: {
+          'base-directory': 'http-service',
+          files: 'ProdHttpServiceStack.template.yaml',
+        },
+      },
+    });
+
     const dockerBuild = new codebuild.PipelineProject(this, 'DockerCodeBuildProject', {
       environment: {
         buildImage: codebuild.LinuxBuildImage.UBUNTU_14_04_DOCKER_17_09_0,
@@ -37,17 +64,17 @@ export class CodePipelineStack extends cdk.Stack {
             commands: '$(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)',
           },
           build: {
-            commands: 'docker build -t $REPOSITORY_URI:latest demo-http-server',
+            commands: 'docker build -t $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION demo-http-server',
           },
           post_build: {
             commands: [
-              'docker push $REPOSITORY_URI:latest',
-              `printf '[{ "name": "Main", "imageUri": "%s" }]' $REPOSITORY_URI:latest > imagedefinitions.json`,
+              'docker push $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
+              `printf '{ "Parameters": { "imageTag": "$CODEBUILD_RESOLVED_SOURCE_VERSION" } }' > imageTag.json`,
             ],
           },
         },
         artifacts: {
-          files: 'imagedefinitions.json',
+          files: 'imageTag.json',
         },
       },
       environmentVariables: {
@@ -73,6 +100,12 @@ export class CodePipelineStack extends cdk.Stack {
               input: sourceOutput,
               output: new codepipeline.Artifact(),
             }),
+            new codepipeline_actions.CodeBuildAction({
+              actionName: 'CdkBuild',
+              project: cdkBuild,
+              input: sourceOutput,
+              output: new codepipeline.Artifact(),
+            })
           ],
         },
         // {
