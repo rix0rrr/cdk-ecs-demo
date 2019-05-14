@@ -17,7 +17,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             <html><head><title>It works</title></head>
             <body>
                 <h1>Just a minute ago I was on your disk and now I am in the cloud.</h1>
-                <h2>Hello AWS Berlin UG!</h2>
                 <img src="https://i.gifer.com/3Bg5.gif" style="width: 500px;">
             </body>
             ''').encode('utf-8'))
