@@ -74,7 +74,7 @@ export class CodePipelineStack extends cdk.Stack {
           post_build: {
             commands: [
               'docker push $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
-              `printf '{ "imageTag": "'$CODEBUILD_RESOLVED_SOURCE_VERSION'" }' > imageTag.json`,
+              `printf '{ "imageTag": "%s" }' $CODEBUILD_RESOLVED_SOURCE_VERSION > imageTag.json`,
             ],
           },
         },
