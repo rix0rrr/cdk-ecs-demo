@@ -1,4 +1,4 @@
-FROM python:3.6
+FROM frolvlad/alpine-python3
 EXPOSE 8000
 WORKDIR /src
 ADD . /src
