@@ -20,7 +20,7 @@ export class HttpServiceStack extends cdk.Stack {
     });
 
     const image = props.image || new ecs.AssetImage(this, 'Image', {
-      directory: path.join(__dirname, '..', '..', 'demo-http-server')
+      directory: path.join(__dirname, '..', 'demo-http-server')
     });
     const container = taskDefinition.addContainer("WebServer", {
       image,

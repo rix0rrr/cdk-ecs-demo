@@ -38,7 +38,6 @@ export class CodePipelineStack extends cdk.Stack {
         phases: {
           install: {
             commands: [
-              'cd http-service',
               'npm install',
             ],
           },
