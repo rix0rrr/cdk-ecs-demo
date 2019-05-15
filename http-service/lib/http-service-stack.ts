@@ -7,6 +7,7 @@ import path = require('path');
 export interface HttpServiceStackProps extends cdk.StackProps {
   vpc: ec2.VpcNetwork;
   cluster: ecs.Cluster;
+  image?: ecs.ContainerImage;
 }
 
 export class HttpServiceStack extends cdk.Stack {
@@ -18,10 +19,11 @@ export class HttpServiceStack extends cdk.Stack {
       cpu: '256'
     });
 
+    const image = props.image || new ecs.AssetImage(this, 'Image', {
+      directory: path.join(__dirname, '..', '..', 'demo-http-server')
+    });
     const container = taskDefinition.addContainer("WebServer", {
-      image: new ecs.AssetImage(this, 'Image', {
-        directory: path.join(__dirname, '..', '..', 'demo-http-server')
-      }),
+      image,
     });
     container.addPortMappings({ containerPort: 8000 });
 
